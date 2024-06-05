@@ -1,0 +1,73 @@
+service: adsdsdsadsad
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: local
+  region: us-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - !GetAtt JobsTable.Arn
+  environment:
+    JOBS_TABLE: ${self:service}-jobs-table-${self:provider.stage}
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-common-excludes
+  - serverless-plugin-include-dependencies
+
+functions:
+  createJob:
+    handler: handler.createJob
+    events:
+      - httpApi:
+          path: /jobs
+          method: post
+  getJobs:
+    handler: handler.getJobs
+    events:
+      - httpApi:
+          path: /jobs
+          method: get
+  getJob:
+    handler: handler.getJob
+    events:
+      - httpApi:
+          path: /jobs/{id}
+          method: get
+  updateJob:
+    handler: handler.updateJob
+    events:
+      - httpApi:
+          path: /jobs/{id}
+          method: put
+  deleteJob:
+    handler: handler.deleteJob
+    events:
+      - httpApi:
+          path: /jobs/{id}
+          method: delete
+
+resources:
+  Resources:
+    JobsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-jobs-table-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: jobId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: jobId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
